@@ -10,8 +10,13 @@ import (
 
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
-	"github.com/shirou/gopsutil/v4/load"
 	"github.com/shirou/gopsutil/v4/mem"
+)
+
+var (
+	kb float64 = 1024
+	mb         = kb * kb
+	gb         = mb * kb
 )
 
 func main() {
@@ -25,7 +30,7 @@ func main() {
 	}
 
 	// almost every return value is a struct
-	fmt.Printf("VMem Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
+	fmt.Printf("VMem Total: %v, Free:%v, UsedPercent:%.2f%%\n", v.Total, v.Free, v.UsedPercent)
 
 	parts, err := disk.PartitionsWithContext(ctx, true)
 	if err != nil {
@@ -36,31 +41,50 @@ func main() {
 		if err != nil {
 			slog.Warn("Cannot get partition usage", "mountpoint", p.Mountpoint)
 		}
-		fmt.Printf("%v Used: %v%%  %v/%v\n", p.Mountpoint, du.UsedPercent, du.Used, du.Total)
+		fmt.Printf("%s Used: %.2f%%  %.2f/%.2f %.2f\n", p.Mountpoint, du.UsedPercent, float64(du.Used)/gb, float64(du.Total)/gb, float64(du.Free)/gb)
 	}
 
 	cpus, err := cpu.InfoWithContext(ctx)
 	if err != nil {
 		slog.Warn("Cannot stat cpu info", "err", err)
 	}
-
 	for _, c := range cpus {
 		fmt.Printf("cpu%v %v %v\n", c.CPU, c.Mhz, c.ModelName)
 	}
-	for {
-		cpuLoad, err := load.AvgWithContext(ctx)
+	tick := time.NewTicker(1 * time.Second).C
+	for range 500 {
+		cpuPercent, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, true)
+		cpuPercentTot, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, false)
 		if err != nil {
-			slog.Warn("Cannot stat cpu load", "err", err)
+			slog.Warn("Cannot stat cpu percent", "err", err)
+		}
+		var t float64
+		for _, c := range cpuPercent {
+			//fmt.Printf("cpu%v %.3f%%\n", i, c)
+			t += c
+		}
+		fmt.Printf("cpu%v %.3f%% %.3f%%\n", " total", t/float64(len(cpuPercent)), cpuPercentTot[0])
+		if ctx.Err() != nil {
 			break
 		}
-		if cpuLoad.Load1 == 0 {
-			if ctx.Err() != nil {
+		<-tick
+	}
+	/*
+		for range 5 {
+			cpuLoad, err := load.AvgWithContext(ctx)
+			if err != nil {
+				slog.Warn("Cannot stat cpu load", "err", err)
 				break
 			}
-			slog.Info("Load is 0", "cpuLoad", cpuLoad)
-			time.Sleep(6 * time.Second)
-			continue
+			if cpuLoad.Load1 == 0 {
+				if ctx.Err() != nil {
+					break
+				}
+				slog.Info("Load is 0", "cpuLoad", cpuLoad, "err", err)
+				time.Sleep(6 * time.Second)
+				continue
+			}
+			fmt.Printf("%v\n", cpuLoad)
 		}
-		fmt.Printf("%v\n", cpuLoad)
-	}
+	*/
 }
