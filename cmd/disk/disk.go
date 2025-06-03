@@ -78,13 +78,7 @@ var diskCmd = &cobra.Command{
 			result.Counter[p.Mountpoint+"-percent"] = du.UsedPercent
 			result.Counter[p.Mountpoint+"-usage"] = du.Used
 			result.Counter[p.Mountpoint+"-free"] = du.Free
-			// result.Counter[p.Mountpoint+"-"] = du.
-			// fmt.Printf("%s Used: %.2f%%  %.2f/%.2f %.2f\n", p.Mountpoint, du.UsedPercent, float64(du.Used)/gb, float64(du.Total)/gb, float64(du.Free)/gb)
 		}
-		// result.Counter["total"] = v.Total
-		// result.Counter["used"] = v.Used
-		// result.Counter["free"] = v.Free
-		// result.Counter[usedPercent] = v.UsedPercent
 
 		result.PrintExit()
 		return nil
@@ -123,7 +117,7 @@ func diskTableFormater(counter map[string]any) string {
 		}
 		disks[diskName] = d
 	}
-	diskRows := make([]table.Row,0, len(disks))
+	diskRows := make([]table.Row, 0, len(disks))
 	for _, d := range disks {
 		diskRows = append(diskRows, d)
 	}
