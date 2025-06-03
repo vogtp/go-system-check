@@ -15,7 +15,7 @@ import (
 	"github.com/vogtp/go-icinga/pkg/icinga"
 )
 
-// Command adds all memory commands
+// Command adds all disk commands
 func Command() *cobra.Command {
 	flags := diskCmd.PersistentFlags()
 	flags.StringSlice(excludeParts, []string{"/run", "/snap", "/sys", "/dev", "/proc"}, "Partions to be excluded")
@@ -78,6 +78,12 @@ var diskCmd = &cobra.Command{
 			result.Counter[p.Mountpoint+"-percent"] = du.UsedPercent
 			result.Counter[p.Mountpoint+"-usage"] = du.Used
 			result.Counter[p.Mountpoint+"-free"] = du.Free
+			if du.UsedPercent > 90 {
+				result.Result = max(icinga.WARNING, result.Result)
+			}
+			if du.UsedPercent > 95 {
+				result.Result = max(icinga.CRITICAL, result.Result)
+			}
 		}
 
 		result.PrintExit()

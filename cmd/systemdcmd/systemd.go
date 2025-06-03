@@ -1,4 +1,4 @@
-package memory
+package systemdcmd
 
 import (
 	"fmt"
@@ -11,16 +11,23 @@ import (
 
 // Command adds all memory commands
 func Command() *cobra.Command {
-	return memoryCmd
+	systemdCmd.AddCommand(systemdUnitCmd)
+	return systemdCmd
 }
 
-const (
-	usedPercent = "used_percent"
-)
+var systemdCmd = &cobra.Command{
+	Use:   "systemd",
+	Short: "Monitor systemd",
+	Long:  ``,
+	RunE: func(cmd *cobra.Command, args []string) error {
 
-var memoryCmd = &cobra.Command{
-	Use:   "memory",
-	Short: "Show memory",
+		return cmd.Help()
+	},
+}
+
+var systemdUnitCmd = &cobra.Command{
+	Use:   "unit",
+	Short: "check a systemd unit",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
@@ -40,20 +47,8 @@ var memoryCmd = &cobra.Command{
 			},
 		}
 
-		v, err := mem.VirtualMemoryWithContext(ctx)
-		if err != nil {
-			return err
-		}
-		result.Counter["total"] = v.Total
-		result.Counter["used"] = v.Used
-		result.Counter["free"] = v.Free
-		result.Counter[usedPercent] = v.UsedPercent
-		if v.UsedPercent > 90 {
-			result.Result = icinga.WARNING
-		}
-		if v.UsedPercent > 98 {
-			result.Result = icinga.CRITICAL
-		}
+		
+
 		result.PrintExit()
 		return nil
 	},

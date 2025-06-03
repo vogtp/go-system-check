@@ -43,7 +43,14 @@ var cpuLoadCmd = &cobra.Command{
 			// fmt.Printf("cpu%v %.3f%%\n", i, f)
 			t += f
 		}
-		result.Total = t / float64(len(cpuPercent))
+		total := t / float64(len(cpuPercent))
+		result.Total = total
+		if total > 90 {
+			result.Result = icinga.WARNING
+		}
+		if total > 98 {
+			result.Result = icinga.CRITICAL
+		}
 		result.Counter["total"] = result.Total
 		// fmt.Printf("total %.3f%%\n", t/float64(len(cpuPercent)))
 		result.PrintExit()

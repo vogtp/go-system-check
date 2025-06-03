@@ -12,6 +12,7 @@ import (
 	"github.com/vogtp/go-system-check/cmd/disk"
 	"github.com/vogtp/go-system-check/cmd/hashcmd"
 	"github.com/vogtp/go-system-check/cmd/memory"
+	"github.com/vogtp/go-system-check/cmd/systemdcmd"
 )
 
 const (
@@ -27,6 +28,7 @@ func Command(ctx context.Context) {
 	rootCtl.AddCommand(hashcmd.Command())
 	rootCtl.AddCommand(memory.Command())
 	rootCtl.AddCommand(disk.Command())
+	rootCtl.AddCommand(systemdcmd.Command())
 
 	flags := rootCtl.PersistentFlags()
 	flags.String(remoteHost, remoteHostDefault, "Remote host to run the command on")
