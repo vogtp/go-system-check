@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/vogtp/go-icinga/pkg/director"
 	cpucmd "github.com/vogtp/go-system-check/cmd/cpu"
+	"github.com/vogtp/go-system-check/cmd/disk"
 	"github.com/vogtp/go-system-check/cmd/hashcmd"
 	"github.com/vogtp/go-system-check/cmd/memory"
 )
@@ -25,6 +26,7 @@ func Command(ctx context.Context) {
 	// rootCtl.AddCommand(testcmd.Command())
 	rootCtl.AddCommand(hashcmd.Command())
 	rootCtl.AddCommand(memory.Command())
+	rootCtl.AddCommand(disk.Command())
 
 	flags := rootCtl.PersistentFlags()
 	flags.String(remoteHost, remoteHostDefault, "Remote host to run the command on")

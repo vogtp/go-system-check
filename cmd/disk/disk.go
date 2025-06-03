@@ -1,0 +1,98 @@
+package disk
+
+import (
+	"fmt"
+	"log/slog"
+	"strings"
+
+	"github.com/shirou/gopsutil/disk"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+	"github.com/vogtp/go-icinga/pkg/checks"
+	"github.com/vogtp/go-icinga/pkg/icinga"
+)
+
+// Command adds all memory commands
+func Command() *cobra.Command {
+	flags := diskCmd.PersistentFlags()
+	flags.StringSlice(excludeParts, []string{"/run", "/snap", "/sys", "/dev", "/proc"}, "Partions to be excluded")
+	flags.VisitAll(func(f *pflag.Flag) {
+		if err := viper.BindPFlag(f.Name, f); err != nil {
+			panic(err)
+		}
+	})
+	return diskCmd
+}
+
+const (
+	excludeParts = "exclude"
+	usedPercent  = "used_percent"
+)
+
+var (
+	kb float64 = 1024
+	mb         = kb * kb
+	gb         = mb * kb
+)
+
+var diskCmd = &cobra.Command{
+	Use:   "disk",
+	Short: "Show disk usage",
+	Long:  ``,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+
+		result := checks.Result{
+			Name:    cmd.CommandPath(),
+			Prefix:  "",
+			Result:  icinga.OK,
+			Stati:   make(map[string]any),
+			Counter: make(map[string]any),
+			CounterFormater: func(name string, value any) string {
+				f, ok := value.(float64)
+				if !ok {
+					return fmt.Sprintf("%v", value)
+				}
+				return fmt.Sprintf("%.3f%%", f)
+			},
+		}
+
+		parts, err := disk.PartitionsWithContext(ctx, true)
+		if err != nil {
+			return err
+		}
+		for _, p := range parts {
+			if exclude(p.Mountpoint, viper.GetStringSlice(excludeParts)...) {
+				continue
+			}
+			du, err := disk.UsageWithContext(ctx, p.Mountpoint)
+			if err != nil {
+				slog.Warn("Cannot get partition usage", "mountpoint", p.Mountpoint)
+				continue
+			}
+			result.Counter[p.Mountpoint+"-total"] = du.Total
+			result.Counter[p.Mountpoint+"-percent"] = du.UsedPercent
+			result.Counter[p.Mountpoint+"-usage"] = du.Used
+			result.Counter[p.Mountpoint+"-free"] = du.Free
+			// result.Counter[p.Mountpoint+"-"] = du.
+			// fmt.Printf("%s Used: %.2f%%  %.2f/%.2f %.2f\n", p.Mountpoint, du.UsedPercent, float64(du.Used)/gb, float64(du.Total)/gb, float64(du.Free)/gb)
+		}
+		// result.Counter["total"] = v.Total
+		// result.Counter["used"] = v.Used
+		// result.Counter["free"] = v.Free
+		// result.Counter[usedPercent] = v.UsedPercent
+
+		result.PrintExit()
+		return nil
+	},
+}
+
+func exclude(path string, excl ...string) bool {
+	for _, e := range excl {
+		if strings.HasPrefix(path, e) {
+			return true
+		}
+	}
+	return false
+}
