@@ -24,6 +24,6 @@ var testSshCmd = &cobra.Command{
 	Use:  "ssh <user> <host>",
 	Long: ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return ssh.RunOrCopy(cmd.Context(), args[0], args[1], "cpu load")
+		return ssh.RunOrCopy(cmd.Context(), args[0], args[1], []string{"cpu", "load"})
 	},
 }

@@ -4,32 +4,24 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/vogtp/go-system-check/pkg/hash"
 	"golang.org/x/crypto/ssh"
 )
 
-func RunOrCopy(ctx context.Context, user, host string, cmd string) error {
-	// key, err := os.ReadFile("/home/vogtp/.ssh/id_ed25519")
-	// if err != nil {
-	// 	log.Fatalf("unable to read private key: %v", err)
-	// }
+func RunOrCopy(ctx context.Context, user, host string, cmd []string) error {
+	if len(cmd) < 1 {
+		return fmt.Errorf("no command given: %v", cmd)
+	}
 
-	// fmt.Printf("%#v\n", key)
-
-	// Create the Signer for this private key.
 	signer, err := ssh.ParsePrivateKeyWithPassphrase(ssh_key, ssh_key_pass)
 	if err != nil {
 		return fmt.Errorf("unable to parse private key: %w", err)
 	}
-	//var hostKey ssh.PublicKey
-	// An SSH client is represented with a ClientConn.
-	//
-	// To authenticate with the remote server you must pass at least one
-	// implementation of AuthMethod via the Auth field in ClientConfig,
-	// and provide a HostKeyCallback.
+
 	config := &ssh.ClientConfig{
 		User: user,
 		Auth: []ssh.AuthMethod{
@@ -43,22 +35,22 @@ func RunOrCopy(ctx context.Context, user, host string, cmd string) error {
 	}
 	defer client.Close()
 
-	local := os.Args[0]
-	_, remote := filepath.Split(local)
 	h, err := hash.Calc()
 	if err != nil {
 		return fmt.Errorf("cannot calculate my hash: %w", err)
 	}
+	remote := cmd[0]
 	if err := exec(client, fmt.Sprintf("./%s hash check %s", remote, h)); err != nil {
-		
-		fmt.Printf("remote version is outdated: copy %q to remote file: %q\n", local,  remote)
+		local := os.Args[0]
+		fmt.Printf("remote version is outdated: copy %q to remote file: %q\n", local, remote)
 		if err := Copy(ctx, client, local, remote); err != nil {
 			return err
 		}
 	}
-
-	if err := exec(client, fmt.Sprintf("./%s %s", remote, cmd)); err != nil {
-		return err
+	cmdLine := fmt.Sprintf("./%s", strings.Join(cmd, " "))
+	slog.Info("Executing remote command", "cmd", cmdLine)
+	if err := exec(client, cmdLine); err != nil {
+		return fmt.Errorf("%q returned: %w", cmdLine, err)
 	}
 	return nil
 }
