@@ -10,7 +10,7 @@ import (
 	"github.com/vogtp/go-icinga/pkg/director"
 	cpucmd "github.com/vogtp/go-system-check/cmd/cpu"
 	"github.com/vogtp/go-system-check/cmd/hashcmd"
-	testcmd "github.com/vogtp/go-system-check/cmd/test"
+	"github.com/vogtp/go-system-check/cmd/memory"
 )
 
 const (
@@ -22,8 +22,9 @@ const (
 // Command adds the root command
 func Command(ctx context.Context) {
 	rootCtl.AddCommand(cpucmd.Command())
-	rootCtl.AddCommand(testcmd.Command())
+	// rootCtl.AddCommand(testcmd.Command())
 	rootCtl.AddCommand(hashcmd.Command())
+	rootCtl.AddCommand(memory.Command())
 
 	flags := rootCtl.PersistentFlags()
 	flags.String(remoteHost, remoteHostDefault, "Remote host to run the command on")
