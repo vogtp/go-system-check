@@ -12,14 +12,14 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func RunOrCopy(ctx context.Context, user, host string, cmd []string) error {
+func RunOrCopy(ctx context.Context, user, host string, cmd []string) (string, error) {
 	if len(cmd) < 1 {
-		return fmt.Errorf("no command given: %v", cmd)
+		return "", fmt.Errorf("no command given: %v", cmd)
 	}
 
 	signer, err := ssh.ParsePrivateKeyWithPassphrase(ssh_key, ssh_key_pass)
 	if err != nil {
-		return fmt.Errorf("unable to parse private key: %w", err)
+		return "", fmt.Errorf("unable to parse private key: %w", err)
 	}
 
 	config := &ssh.ClientConfig{
@@ -31,42 +31,44 @@ func RunOrCopy(ctx context.Context, user, host string, cmd []string) error {
 	}
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", host), config)
 	if err != nil {
-		return fmt.Errorf("failed to dial: %w", err)
+		return "", fmt.Errorf("failed to dial: %w", err)
 	}
 	defer client.Close()
 
 	h, err := hash.Calc()
 	if err != nil {
-		return fmt.Errorf("cannot calculate my hash: %w", err)
+		return "", fmt.Errorf("cannot calculate my hash: %w", err)
 	}
 	remote := cmd[0]
-	if err := exec(client, fmt.Sprintf("./%s hash check %s", remote, h)); err != nil {
+	if _, err := exec(client, fmt.Sprintf("./%s hash check %s", remote, h)); err != nil {
 		local := os.Args[0]
-		fmt.Printf("remote version is outdated: copy %q to remote file: %q\n", local, remote)
+		slog.Info("remote version is outdated: copy local to remote ", "local", local, "remote", remote)
 		if err := Copy(ctx, client, local, remote); err != nil {
-			return err
+			return "", err
 		}
 	}
 	cmdLine := fmt.Sprintf("./%s", strings.Join(cmd, " "))
-	slog.Info("Executing remote command", "cmd", cmdLine)
-	if err := exec(client, cmdLine); err != nil {
-		return fmt.Errorf("%q returned: %w", cmdLine, err)
+	slog.Debug("Executing remote command", "cmd", cmdLine, "host", host, "user", user)
+	out, err := exec(client, cmdLine)
+	if err != nil {
+		return "", fmt.Errorf("%q returned: %w", cmdLine, err)
 	}
-	return nil
+	return out, nil
 }
 
-func exec(client *ssh.Client, cmd string) error {
+func exec(client *ssh.Client, cmd string) (string, error) {
 	session, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("failed to create session: %w", err)
+		return "", fmt.Errorf("failed to create session: %w", err)
 	}
 	defer session.Close()
-	var b bytes.Buffer
-	session.Stdout = &b
-	if err := session.Run(cmd); err != nil {
-		return fmt.Errorf("failed to run command %q: %w", cmd, err)
+	var stdo bytes.Buffer
+	var stde bytes.Buffer
+	session.Stdout = &stdo
+	session.Stderr = &stde
+	err = session.Run(cmd)
+	if stde.Len() > 0 {
+		fmt.Println(stde.String())
 	}
-	fmt.Println(b.String())
-	//	session.
-	return nil
+	return stdo.String(), err
 }

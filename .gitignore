@@ -22,3 +22,5 @@ build/
 ignore_*
 
 go.work*
+
+Makefile

@@ -2,6 +2,7 @@ package hashcmd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -32,9 +33,8 @@ var hashCheckCmd = &cobra.Command{
 		if len(args) < 1 {
 			return cmd.Help()
 		}
-	
 		if err:= hash.Check(args[0]); err != nil {
-			fmt.Println(err.Error())
+			slog.Info("Hash Check failed", "err", err)
 			os.Exit(1)
 		}
 		return nil
