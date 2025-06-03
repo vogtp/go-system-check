@@ -6,11 +6,10 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"time"
 
-	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/mem"
+	"github.com/vogtp/go-system-check/cmd/root"
 )
 
 var (
@@ -20,6 +19,11 @@ var (
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer stop()
+	root.Command(ctx)
+}
+func main2() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
@@ -44,31 +48,6 @@ func main() {
 		fmt.Printf("%s Used: %.2f%%  %.2f/%.2f %.2f\n", p.Mountpoint, du.UsedPercent, float64(du.Used)/gb, float64(du.Total)/gb, float64(du.Free)/gb)
 	}
 
-	cpus, err := cpu.InfoWithContext(ctx)
-	if err != nil {
-		slog.Warn("Cannot stat cpu info", "err", err)
-	}
-	for _, c := range cpus {
-		fmt.Printf("cpu%v %v %v\n", c.CPU, c.Mhz, c.ModelName)
-	}
-	tick := time.NewTicker(1 * time.Second).C
-	for range 500 {
-		cpuPercent, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, true)
-		cpuPercentTot, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, false)
-		if err != nil {
-			slog.Warn("Cannot stat cpu percent", "err", err)
-		}
-		var t float64
-		for _, c := range cpuPercent {
-			//fmt.Printf("cpu%v %.3f%%\n", i, c)
-			t += c
-		}
-		fmt.Printf("cpu%v %.3f%% %.3f%%\n", " total", t/float64(len(cpuPercent)), cpuPercentTot[0])
-		if ctx.Err() != nil {
-			break
-		}
-		<-tick
-	}
 	/*
 		for range 5 {
 			cpuLoad, err := load.AvgWithContext(ctx)
