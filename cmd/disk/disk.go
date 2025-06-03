@@ -3,8 +3,10 @@ package disk
 import (
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -56,6 +58,7 @@ var diskCmd = &cobra.Command{
 				}
 				return fmt.Sprintf("%.3f%%", f)
 			},
+			DisplayCounterFormater: diskTableFormater,
 		}
 
 		parts, err := disk.PartitionsWithContext(ctx, true)
@@ -95,4 +98,63 @@ func exclude(path string, excl ...string) bool {
 		}
 	}
 	return false
+}
+
+func diskTableFormater(counter map[string]any) string {
+	rowHeader := table.Row{"Partiton", "Percent", "Used", "Free", "Total"}
+	disks := make(map[string]table.Row)
+	for n, v := range counter {
+		split := strings.Split(n, "-")
+		diskName := split[0]
+		d, ok := disks[diskName]
+		if !ok {
+			d = make([]any, 5)
+			d[0] = diskName
+		}
+		switch split[1] {
+		case "percent":
+			d[1] = fmt.Sprintf("%.1f%%", v)
+		case "usage":
+			d[2] = formatGB(v)
+		case "free":
+			d[3] = formatGB(v)
+		case "total":
+			d[4] = formatGB(v)
+		}
+		disks[diskName] = d
+	}
+	diskRows := make([]table.Row,0, len(disks))
+	for _, d := range disks {
+		diskRows = append(diskRows, d)
+	}
+	slices.SortFunc(diskRows, tableSort)
+	tw := table.NewWriter()
+	tw.AppendHeader(rowHeader)
+	tw.AppendRows(diskRows)
+	tw.SetIndexColumn(0)
+	style := table.StyleLight
+	style.HTML.EscapeText = true
+	tw.SetStyle(style)
+	return tw.Render()
+}
+func tableSort(a, b table.Row) int {
+	if len(a) < 1 || len(b) < 1 {
+		return 0
+	}
+	return len(a[0].(string)) - len(b[0].(string))
+}
+
+func formatGB(d any) string {
+	i, ok := d.(uint64)
+	if !ok {
+		return fmt.Sprintf("%v", d)
+	}
+	f := float64(i)
+	if f > gb {
+		return fmt.Sprintf("%.0f GB", f/gb)
+	}
+	if f > mb {
+		return fmt.Sprintf("%.0f MB", f/mb)
+	}
+	return fmt.Sprintf("%.0f KB", f/kb)
 }
