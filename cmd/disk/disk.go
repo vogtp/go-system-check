@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/vogtp/go-icinga/pkg/checks"
 	"github.com/vogtp/go-icinga/pkg/icinga"
+	"github.com/vogtp/go-system-check/pkg/unit"
 )
 
 // Command adds all disk commands
@@ -32,12 +33,6 @@ const (
 	usedPercent  = "used_percent"
 )
 
-var (
-	kb float64 = 1024
-	mb         = kb * kb
-	gb         = mb * kb
-)
-
 var diskCmd = &cobra.Command{
 	Use:   "disk",
 	Short: "Show disk usage",
@@ -54,6 +49,7 @@ var diskCmd = &cobra.Command{
 			slog.Warn("Cannot read partition info", "err", err)
 			return err
 		}
+		var h strings.Builder
 		for _, p := range parts {
 			if exclude(p.Mountpoint, viper.GetStringSlice(excludeParts)...) {
 				continue
@@ -67,17 +63,27 @@ var diskCmd = &cobra.Command{
 			result.SetCounter(p.Mountpoint+"-percent", du.UsedPercent)
 			result.SetCounter(p.Mountpoint+"-usage", du.Used)
 			result.SetCounter(p.Mountpoint+"-free", du.Free)
+			code := ""
 			if du.UsedPercent > 90 {
 				result.SetCode(icinga.WARNING)
+				code = fmt.Sprintf("[%s]", icinga.WARNING.String())
+			} else {
+				code = fmt.Sprintf("[%s]", icinga.OK.String())
 			}
 			if du.UsedPercent > 95 {
 				result.SetCode(icinga.CRITICAL)
+				code = fmt.Sprintf("[%s]", icinga.CRITICAL.String())
 			}
+			h.WriteString(fmt.Sprintf("%s %s %.0f%% ", p.Mountpoint, code, du.UsedPercent))
 		}
-
+		result.SetHeader("%s", h.String())
 		return nil
 	},
 }
+
+/*
+--warning 90%/
+*/
 
 func exclude(path string, excl ...string) bool {
 	for _, e := range excl {
@@ -103,11 +109,11 @@ func diskTableFormater(counter map[string]any) string {
 		case "percent":
 			d[1] = fmt.Sprintf("%.1f%%", v)
 		case "usage":
-			d[2] = formatGB(v)
+			d[2] = unit.FormatGB(v)
 		case "free":
-			d[3] = formatGB(v)
+			d[3] = unit.FormatGB(v)
 		case "total":
-			d[4] = formatGB(v)
+			d[4] = unit.FormatGB(v)
 		}
 		disks[diskName] = d
 	}
@@ -130,19 +136,4 @@ func tableSort(a, b table.Row) int {
 		return 0
 	}
 	return len(a[0].(string)) - len(b[0].(string))
-}
-
-func formatGB(d any) string {
-	i, ok := d.(uint64)
-	if !ok {
-		return fmt.Sprintf("%v", d)
-	}
-	f := float64(i)
-	if f > gb {
-		return fmt.Sprintf("%.0f GB", f/gb)
-	}
-	if f > mb {
-		return fmt.Sprintf("%.0f MB", f/mb)
-	}
-	return fmt.Sprintf("%.0f KB", f/kb)
 }

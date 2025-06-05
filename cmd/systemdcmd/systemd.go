@@ -3,6 +3,7 @@ package systemdcmd
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
@@ -54,7 +55,7 @@ var systemdServiceCmd = &cobra.Command{
 		result := checks.NewCheckResult(cmd.CommandPath(), checks.CounterFormater(activeStateFormater), checks.DisplayFormater(systemdUnitTableFormater))
 
 		defer result.PrintExit()
-
+		var h strings.Builder
 		for _, unit := range units {
 			service, err := systemd.Unit(unit)
 			if err != nil {
@@ -63,16 +64,23 @@ var systemdServiceCmd = &cobra.Command{
 				return err
 			}
 			result.SetCounter(unit, service)
-			if service.ActiveStateInt() < 1 {
-				result.SetCode(icinga.WARNING)
-			}
-			if service.ActiveStateInt() < 0 && service.Preset() == "enabled" {
-				result.SetCode(icinga.CRITICAL)
-			}
+			code := getResultCode(service)
+			result.SetCode(code)
+			h.WriteString(fmt.Sprintf("%s [%s] ", unit, code))
 		}
-
+		result.SetHeader("%s", h.String())
 		return nil
 	},
+}
+
+func getResultCode(service *systemd.Service) icinga.ResultCode {
+	if service.ActiveStateInt() < 1 {
+		return icinga.WARNING
+	}
+	if service.ActiveStateInt() < 0 && service.Preset() == "enabled" {
+		return icinga.CRITICAL
+	}
+	return icinga.OK
 }
 
 func activeStateFormater(name string, value any) string {
@@ -94,6 +102,7 @@ func systemdUnitTableFormater(counter map[string]any) string {
 		}
 		rows = append(rows, table.Row{n, u.ActiveState(), u.Preset()})
 	}
+
 	//slices.SortFunc(rows, tableSort)
 	tw := table.NewWriter()
 	tw.AppendHeader(rowHeader)
@@ -102,6 +111,13 @@ func systemdUnitTableFormater(counter map[string]any) string {
 	style := table.StyleLight
 	style.HTML.EscapeText = true
 	tw.SetStyle(style)
+	// tw.SetColumnConfigs([]table.ColumnConfig{
+	// 	// 	//{Name: colTitleFirstName, Align: text.AlignRight},
+	// 	// 	// the 5th column does not have a title, so use the column number as the
+	// 	// 	// identifier for the column
+	// 	// 	{Number: 0, WidthMax: 1},
+	// 	{Name: "Status", WidthMin: len("CRITICAL")},
+	// })
 	return tw.Render()
 }
 

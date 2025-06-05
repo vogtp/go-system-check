@@ -1,12 +1,14 @@
 package memory
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/shirou/gopsutil/mem"
 	"github.com/spf13/cobra"
 	"github.com/vogtp/go-icinga/pkg/checks"
 	"github.com/vogtp/go-icinga/pkg/icinga"
+	"github.com/vogtp/go-system-check/pkg/unit"
 )
 
 // Command adds all memory commands
@@ -18,6 +20,17 @@ const (
 	usedPercent = "used_percent"
 )
 
+func memoryFormater() checks.CheckResultOption {
+	return checks.CounterFormater(func(name string, value any) string {
+		f, ok := value.(float64)
+		if !ok {
+			return unit.FormatGB(value)
+		}
+		return fmt.Sprintf("%.3f%%", f)
+	},
+	)
+}
+
 var memoryCmd = &cobra.Command{
 	Use:   "memory",
 	Short: "Show memory",
@@ -25,7 +38,7 @@ var memoryCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		result := checks.NewCheckResult(cmd.CommandPath(), checks.PercentCounterFormater())
+		result := checks.NewCheckResult(cmd.CommandPath(), memoryFormater())
 
 		defer result.PrintExit()
 
@@ -45,6 +58,7 @@ var memoryCmd = &cobra.Command{
 		if v.UsedPercent > 98 {
 			result.SetCode(icinga.CRITICAL)
 		}
+		result.SetHeader("Used %.0f%%", v.UsedPercent)
 		return nil
 	},
 }

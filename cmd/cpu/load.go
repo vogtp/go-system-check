@@ -34,14 +34,14 @@ var cpuLoadCmd = &cobra.Command{
 			t += f
 		}
 		total := t / float64(len(cpuPercent))
-		result.Total = total
+		result.SetHeader("Total load %v", total)
 		if total > 90 {
 			result.SetCode(icinga.WARNING)
 		}
 		if total > 98 {
 			result.SetCode(icinga.CRITICAL)
 		}
-		result.SetCounter("total", result.Total)
+		result.SetCounter("total", total)
 		// fmt.Printf("total %.3f%%\n", t/float64(len(cpuPercent)))
 
 		return nil
