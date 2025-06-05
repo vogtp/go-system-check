@@ -55,7 +55,6 @@ var systemdServiceCmd = &cobra.Command{
 		result := checks.Result{
 			Name:    cmd.CommandPath(),
 			Prefix:  "",
-			Result:  icinga.OK,
 			Stati:   make(map[string]any),
 			Counter: make(map[string]any),
 			CounterFormater: func(name string, value any) string {
@@ -67,21 +66,23 @@ var systemdServiceCmd = &cobra.Command{
 			},
 			DisplayCounterFormater: systemdUnitTableFormater,
 		}
+		defer result.PrintExit()
+
 		for _, unit := range units {
 			service, err := systemd.Unit(unit)
 			if err != nil {
+				result.SetCode(icinga.UNKNOWN)
 				return err
 			}
 			result.Counter[unit] = service
 			if service.ActiveStateInt() < 1 {
-				result.Result = max(icinga.WARNING, result.Result)
+				result.SetCode(icinga.WARNING)
 			}
 			if service.ActiveStateInt() < 0 && service.Preset() == "enabled" {
-				result.Result = max(icinga.CRITICAL, result.Result)
+				result.SetCode(icinga.CRITICAL)
 			}
 		}
 
-		result.PrintExit()
 		return nil
 	},
 }

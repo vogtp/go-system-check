@@ -21,7 +21,6 @@ var cpuLoadCmd = &cobra.Command{
 		result := checks.Result{
 			Name:    cmd.CommandPath(),
 			Prefix:  "",
-			Result:  icinga.OK,
 			Stati:   make(map[string]any),
 			Counter: make(map[string]any),
 			CounterFormater: func(name string, value any) string {
@@ -32,9 +31,11 @@ var cpuLoadCmd = &cobra.Command{
 				return fmt.Sprintf("%.3f%%", f)
 			},
 		}
+		defer result.PrintExit()
 		cpuPercent, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, true)
 		if err != nil {
 			slog.Warn("Cannot stat cpu percent", "err", err)
+			result.SetCode(icinga.UNKNOWN)
 			return err
 		}
 		var t float64
@@ -46,14 +47,14 @@ var cpuLoadCmd = &cobra.Command{
 		total := t / float64(len(cpuPercent))
 		result.Total = total
 		if total > 90 {
-			result.Result = icinga.WARNING
+			result.SetCode(icinga.WARNING)
 		}
 		if total > 98 {
-			result.Result = icinga.CRITICAL
+			result.SetCode(icinga.CRITICAL)
 		}
 		result.Counter["total"] = result.Total
 		// fmt.Printf("total %.3f%%\n", t/float64(len(cpuPercent)))
-		result.PrintExit()
+
 		return nil
 	},
 }

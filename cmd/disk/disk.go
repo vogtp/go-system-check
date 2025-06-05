@@ -48,7 +48,6 @@ var diskCmd = &cobra.Command{
 		result := checks.Result{
 			Name:    cmd.CommandPath(),
 			Prefix:  "",
-			Result:  icinga.OK,
 			Stati:   make(map[string]any),
 			Counter: make(map[string]any),
 			CounterFormater: func(name string, value any) string {
@@ -60,9 +59,11 @@ var diskCmd = &cobra.Command{
 			},
 			DisplayCounterFormater: diskTableFormater,
 		}
+		defer result.PrintExit()
 
 		parts, err := disk.PartitionsWithContext(ctx, true)
 		if err != nil {
+			result.SetCode(icinga.UNKNOWN)
 			return err
 		}
 		for _, p := range parts {
@@ -79,14 +80,13 @@ var diskCmd = &cobra.Command{
 			result.Counter[p.Mountpoint+"-usage"] = du.Used
 			result.Counter[p.Mountpoint+"-free"] = du.Free
 			if du.UsedPercent > 90 {
-				result.Result = max(icinga.WARNING, result.Result)
+				result.SetCode(icinga.WARNING)
 			}
 			if du.UsedPercent > 95 {
-				result.Result = max(icinga.CRITICAL, result.Result)
+				result.SetCode(icinga.CRITICAL)
 			}
 		}
 
-		result.PrintExit()
 		return nil
 	},
 }

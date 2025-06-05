@@ -28,7 +28,6 @@ var memoryCmd = &cobra.Command{
 		result := checks.Result{
 			Name:    cmd.CommandPath(),
 			Prefix:  "",
-			Result:  icinga.OK,
 			Stati:   make(map[string]any),
 			Counter: make(map[string]any),
 			CounterFormater: func(name string, value any) string {
@@ -39,9 +38,11 @@ var memoryCmd = &cobra.Command{
 				return fmt.Sprintf("%.3f%%", f)
 			},
 		}
+		defer result.PrintExit()
 
 		v, err := mem.VirtualMemoryWithContext(ctx)
 		if err != nil {
+			result.SetCode(icinga.WARNING)
 			return err
 		}
 		result.Counter["total"] = v.Total
@@ -49,12 +50,11 @@ var memoryCmd = &cobra.Command{
 		result.Counter["free"] = v.Free
 		result.Counter[usedPercent] = v.UsedPercent
 		if v.UsedPercent > 90 {
-			result.Result = icinga.WARNING
+			result.SetCode(icinga.WARNING)
 		}
 		if v.UsedPercent > 98 {
-			result.Result = icinga.CRITICAL
+			result.SetCode(icinga.CRITICAL)
 		}
-		result.PrintExit()
 		return nil
 	},
 }
