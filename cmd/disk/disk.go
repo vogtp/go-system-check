@@ -45,25 +45,13 @@ var diskCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		result := checks.Result{
-			Name:    cmd.CommandPath(),
-			Prefix:  "",
-			Stati:   make(map[string]any),
-			Counter: make(map[string]any),
-			CounterFormater: func(name string, value any) string {
-				f, ok := value.(float64)
-				if !ok {
-					return fmt.Sprintf("%v", value)
-				}
-				return fmt.Sprintf("%.3f%%", f)
-			},
-			DisplayCounterFormater: diskTableFormater,
-		}
+		result := checks.NewCheckResult(cmd.CommandPath(), checks.PercentCounterFormater(), checks.DisplayFormater(diskTableFormater))
 		defer result.PrintExit()
 
 		parts, err := disk.PartitionsWithContext(ctx, true)
 		if err != nil {
 			result.SetCode(icinga.UNKNOWN)
+			slog.Warn("Cannot read partition info", "err", err)
 			return err
 		}
 		for _, p := range parts {
@@ -75,10 +63,10 @@ var diskCmd = &cobra.Command{
 				slog.Warn("Cannot get partition usage", "mountpoint", p.Mountpoint)
 				continue
 			}
-			result.Counter[p.Mountpoint+"-total"] = du.Total
-			result.Counter[p.Mountpoint+"-percent"] = du.UsedPercent
-			result.Counter[p.Mountpoint+"-usage"] = du.Used
-			result.Counter[p.Mountpoint+"-free"] = du.Free
+			result.SetCounter(p.Mountpoint+"-total", du.Total)
+			result.SetCounter(p.Mountpoint+"-percent", du.UsedPercent)
+			result.SetCounter(p.Mountpoint+"-usage", du.Used)
+			result.SetCounter(p.Mountpoint+"-free", du.Free)
 			if du.UsedPercent > 90 {
 				result.SetCode(icinga.WARNING)
 			}

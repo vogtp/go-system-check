@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"fmt"
+	"log/slog"
 
 	"github.com/shirou/gopsutil/mem"
 	"github.com/spf13/cobra"
@@ -25,30 +25,20 @@ var memoryCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		result := checks.Result{
-			Name:    cmd.CommandPath(),
-			Prefix:  "",
-			Stati:   make(map[string]any),
-			Counter: make(map[string]any),
-			CounterFormater: func(name string, value any) string {
-				f, ok := value.(float64)
-				if !ok {
-					return fmt.Sprintf("%v", value)
-				}
-				return fmt.Sprintf("%.3f%%", f)
-			},
-		}
+		result := checks.NewCheckResult(cmd.CommandPath(), checks.PercentCounterFormater())
+
 		defer result.PrintExit()
 
 		v, err := mem.VirtualMemoryWithContext(ctx)
 		if err != nil {
 			result.SetCode(icinga.WARNING)
+			slog.Warn("Cannot get memory", "err", err)
 			return err
 		}
-		result.Counter["total"] = v.Total
-		result.Counter["used"] = v.Used
-		result.Counter["free"] = v.Free
-		result.Counter[usedPercent] = v.UsedPercent
+		result.SetCounter("total", v.Total)
+		result.SetCounter("used", v.Used)
+		result.SetCounter("free", v.Free)
+		result.SetCounter(usedPercent, v.UsedPercent)
 		if v.UsedPercent > 90 {
 			result.SetCode(icinga.WARNING)
 		}

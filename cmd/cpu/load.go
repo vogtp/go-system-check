@@ -18,19 +18,8 @@ var cpuLoadCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		result := checks.Result{
-			Name:    cmd.CommandPath(),
-			Prefix:  "",
-			Stati:   make(map[string]any),
-			Counter: make(map[string]any),
-			CounterFormater: func(name string, value any) string {
-				f, ok := value.(float64)
-				if !ok {
-					return fmt.Sprintf("%v", value)
-				}
-				return fmt.Sprintf("%.3f%%", f)
-			},
-		}
+		result := checks.NewCheckResult(cmd.CommandPath(), checks.PercentCounterFormater())
+
 		defer result.PrintExit()
 		cpuPercent, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, true)
 		if err != nil {
@@ -40,7 +29,7 @@ var cpuLoadCmd = &cobra.Command{
 		}
 		var t float64
 		for i, f := range cpuPercent {
-			result.Counter[fmt.Sprintf("cpu%v", i)] = f
+			result.SetCounter(fmt.Sprintf("cpu%v", i), f)
 			// fmt.Printf("cpu%v %.3f%%\n", i, f)
 			t += f
 		}
@@ -52,7 +41,7 @@ var cpuLoadCmd = &cobra.Command{
 		if total > 98 {
 			result.SetCode(icinga.CRITICAL)
 		}
-		result.Counter["total"] = result.Total
+		result.SetCounter("total", result.Total)
 		// fmt.Printf("total %.3f%%\n", t/float64(len(cpuPercent)))
 
 		return nil

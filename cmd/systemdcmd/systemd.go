@@ -52,29 +52,18 @@ var systemdServiceCmd = &cobra.Command{
 			fmt.Println(checks.LogBuffer.String())
 			return cmd.Help()
 		}
-		result := checks.Result{
-			Name:    cmd.CommandPath(),
-			Prefix:  "",
-			Stati:   make(map[string]any),
-			Counter: make(map[string]any),
-			CounterFormater: func(name string, value any) string {
-				f, ok := value.(*systemd.Service)
-				if !ok {
-					return fmt.Sprintf("%T", value)
-				}
-				return fmt.Sprintf("%v", f.ActiveStateInt())
-			},
-			DisplayCounterFormater: systemdUnitTableFormater,
-		}
+		result := checks.NewCheckResult(cmd.CommandPath(), checks.CounterFormater(activeStateFormater), checks.DisplayFormater(systemdUnitTableFormater))
+
 		defer result.PrintExit()
 
 		for _, unit := range units {
 			service, err := systemd.Unit(unit)
 			if err != nil {
 				result.SetCode(icinga.UNKNOWN)
+				slog.Warn("Cannot check systemd", "unit", unit, "err", err)
 				return err
 			}
-			result.Counter[unit] = service
+			result.SetCounter(unit, service)
 			if service.ActiveStateInt() < 1 {
 				result.SetCode(icinga.WARNING)
 			}
@@ -85,6 +74,14 @@ var systemdServiceCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+func activeStateFormater(name string, value any) string {
+	f, ok := value.(*systemd.Service)
+	if !ok {
+		return fmt.Sprintf("%T", value)
+	}
+	return fmt.Sprintf("%v", f.ActiveStateInt())
 }
 
 func systemdUnitTableFormater(counter map[string]any) string {
