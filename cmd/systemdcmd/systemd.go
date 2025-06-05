@@ -49,7 +49,6 @@ var systemdServiceCmd = &cobra.Command{
 		units := append(args, viper.GetStringSlice(systemdUnits)...)
 		if len(units) < 1 {
 			slog.Warn("No services given", "args", args, "systemdUnits", viper.GetString(systemdUnits), "units", units)
-			fmt.Println(checks.LogBuffer.String())
 			return cmd.Help()
 		}
 		result := checks.NewCheckResult(cmd.CommandPath(), checks.CounterFormater(activeStateFormater), checks.DisplayFormater(systemdUnitTableFormater))
