@@ -1,32 +1,75 @@
 package ssh
 
+//go:generate go run gen.go arg1 arg2
+
 import (
 	"bytes"
 	"context"
 	"fmt"
+	"html"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+	"github.com/vogtp/go-icinga/pkg/checks"
 	"github.com/vogtp/go-system-check/pkg/hash"
 	"golang.org/x/crypto/ssh"
 )
 
-func RunOrCopy(ctx context.Context, user, host string, cmd []string) (string, error) {
+func RemoteCheck(cmd *cobra.Command, args []string) error {
+	checks.InitLog()
+	if IsRemoteRun() {
+		cmds := strings.Split(cmd.CommandPath(), " ")
+		cmds = append(cmds, args...)
+		cmd.Flags().Visit(func(f *pflag.Flag) {
+			if slices.Contains(ignoredFlags, f.Name) {
+				return
+			}
+			val := f.Value.String()
+			if strings.HasSuffix(f.Value.Type(), "Slice") {
+				val = strings.ReplaceAll(val, "[", "")
+				val = strings.ReplaceAll(val, "]", "")
+				val = strings.ReplaceAll(val, ", ", ",")
+			}
+			cmds = append(cmds, fmt.Sprintf("--%s", f.Name), val)
+		})
+
+		out, err := runOrCopy(cmd.Context(), cmds)
+		if err != nil {
+			return err
+		}
+		if checks.LogBuffer.Len() > 0 {
+			out = strings.ReplaceAll(out, "|", fmt.Sprintf("\nLocal Log:\n%s|", html.EscapeString(checks.LogBuffer.String())))
+		}
+		if len(out) < 1 {
+			fmt.Println(checks.LogBuffer.String())
+			os.Exit(1)
+		}
+		fmt.Print(out)
+		os.Exit(0)
+	}
+	return nil
+}
+
+func runOrCopy(ctx context.Context, cmd []string) (string, error) {
 	if len(cmd) < 1 {
 		return "", fmt.Errorf("no command given: %v", cmd)
 	}
+	user := viper.GetString(remoteUser)
+	host := viper.GetString(remoteHost)
 
-	signer, err := ssh.ParsePrivateKeyWithPassphrase(ssh_key, ssh_key_pass)
+	sshAuth, err := getSshAuth()
 	if err != nil {
-		return "", fmt.Errorf("unable to parse private key: %w", err)
+		return "", fmt.Errorf("no ssh auth: %w", err)
 	}
 
 	config := &ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
+		User:            user,
+		Auth:            sshAuth,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", host), config)
