@@ -9,7 +9,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1
-	github.com/vogtp/go-icinga v0.0.0-20250527141006-cbf298f3348e
+	github.com/vogtp/go-icinga v0.1.0
 	golang.org/x/crypto v0.38.0
 )
 
