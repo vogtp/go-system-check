@@ -3,6 +3,8 @@ package root
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os/user"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -47,8 +49,10 @@ var (
 			if err := generateDirectorConfig(cmd, args); err != nil {
 				return err
 			}
-			fmt.Printf("ssh key: %s\n", viper.GetString("remote.sshkey"))
+			//	fmt.Printf("ssh key: %s\n", viper.GetString("remote.sshkey"))
 			if err := ssh.RemoteCheck(cmd, args); err != nil {
+				u, err2 := user.Current()
+				slog.Warn("Remote check error", "username", u.Name, "home", u.HomeDir, "errr", err2)
 				return err
 			}
 			return nil
