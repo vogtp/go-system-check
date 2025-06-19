@@ -14,11 +14,12 @@ import (
 
 func main() {
 	rootCtl := &check.Command{
-		Use:            "syscheck",
-		Short:          "Selfcontained icinga system checks",
-		NamePrefix:     "293",
-		DescriptionURL: "https://github.com/vogtp/go-system-check",
-		Criticality:    icinga.Criticality7x24,
+		Use:             "syscheck",
+		Short:           "Selfcontained icinga system checks",
+		NamePrefix:      "293",
+		DescriptionURL:  "https://github.com/vogtp/go-system-check",
+		Criticality:     icinga.Criticality7x24,
+		DefaultRemoteOn: true,
 	}
 	rootCtl.AddCommand(cpu.Command())
 	// rootCtl.AddCommand(testcmd.Command())
