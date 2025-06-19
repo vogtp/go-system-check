@@ -6,7 +6,7 @@ import (
 
 	"github.com/shirou/gopsutil/mem"
 	"github.com/spf13/cobra"
-	"github.com/vogtp/go-icinga/pkg/checks"
+	"github.com/vogtp/go-icinga/pkg/check"
 	"github.com/vogtp/go-icinga/pkg/icinga"
 	"github.com/vogtp/go-icinga/pkg/unit"
 )
@@ -20,8 +20,8 @@ const (
 	usedPercent = "used_percent"
 )
 
-func memoryFormater() checks.CheckResultOption {
-	return checks.CounterFormater(func(name string, value any) string {
+func memoryFormater() check.CheckResultOption {
+	return check.CounterFormater(func(name string, value any) string {
 		f, ok := value.(float64)
 		if !ok {
 			return unit.FormatGB(value)
@@ -38,7 +38,7 @@ var memoryCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		result := checks.NewCheckResult(cmd.CommandPath(), memoryFormater())
+		result := check.NewResult(cmd.CommandPath(), memoryFormater())
 
 		defer result.PrintExit()
 

@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/vogtp/go-icinga/pkg/checks"
+	"github.com/vogtp/go-icinga/pkg/check"
 	"github.com/vogtp/go-icinga/pkg/icinga"
 	"github.com/vogtp/go-system-check/pkg/systemd"
 )
@@ -52,7 +52,7 @@ var systemdServiceCmd = &cobra.Command{
 			slog.Warn("No services given", "args", args, "systemdUnits", viper.GetString(systemdUnits), "units", units)
 			return cmd.Help()
 		}
-		result := checks.NewCheckResult(cmd.CommandPath(), checks.CounterFormater(activeStateFormater), checks.DisplayFormater(systemdUnitTableFormater))
+		result := check.NewResult(cmd.CommandPath(), check.CounterFormater(activeStateFormater), check.DisplayFormater(systemdUnitTableFormater))
 
 		defer result.PrintExit()
 		var h strings.Builder

@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/vogtp/go-icinga/pkg/checks"
+	"github.com/vogtp/go-icinga/pkg/check"
 	"github.com/vogtp/go-icinga/pkg/icinga"
 	"github.com/vogtp/go-icinga/pkg/unit"
 )
@@ -40,7 +40,7 @@ var diskCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		result := checks.NewCheckResult(cmd.CommandPath(), checks.PercentCounterFormater(), checks.DisplayFormater(diskTableFormater))
+		result := check.NewResult(cmd.CommandPath(), check.PercentCounterFormater(), check.DisplayFormater(diskTableFormater))
 		defer result.PrintExit()
 
 		parts, err := disk.PartitionsWithContext(ctx, true)

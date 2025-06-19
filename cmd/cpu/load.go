@@ -7,7 +7,7 @@ import (
 
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/spf13/cobra"
-	"github.com/vogtp/go-icinga/pkg/checks"
+	"github.com/vogtp/go-icinga/pkg/check"
 	"github.com/vogtp/go-icinga/pkg/icinga"
 )
 
@@ -18,7 +18,7 @@ var cpuLoadCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		result := checks.NewCheckResult(cmd.CommandPath(), checks.PercentCounterFormater())
+		result := check.NewResult(cmd.CommandPath(), check.PercentCounterFormater())
 
 		defer result.PrintExit()
 		cpuPercent, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, true)
