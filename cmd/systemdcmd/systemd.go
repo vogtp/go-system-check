@@ -22,7 +22,7 @@ const (
 func Command() *cobra.Command {
 	systemdCmd.AddCommand(systemdServiceCmd)
 	flags := systemdCmd.PersistentFlags()
-	flags.StringSlice(systemdUnits, nil, "Systemd services to be checked (e.g. ssh,ufw,httpd) ")
+	flags.StringSlice(systemdUnits, []string{"ssh"}, "Systemd services to be checked (e.g. ssh,ufw,httpd) ")
 	flags.VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(f.Name, f); err != nil {
 			panic(err)

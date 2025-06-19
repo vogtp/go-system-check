@@ -18,9 +18,7 @@ const (
 func Flags(flags *pflag.FlagSet) {
 	flags.String(remoteHost, remoteHostDefault, "Remote host to run the command on")
 	flags.String(remoteUser, "root", "Remote user name")
-	//FIMXE ssh key in tmp is not a good idea
-	flags.String(remoteUserKey, "/tmp/icinga_ssh", "ssh private key file location")
-	//flags.String(remoteUserKey, "/var/lib/nagios/.ssh/icinga_ssh", "ssh private key file location")
+	flags.String(remoteUserKey, "/var/lib/nagios/.ssh/icinga_ssh", "ssh private key file location")
 	flags.String(remoteUserKeyPass, "", "ssh private key password")
 }
 
