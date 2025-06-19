@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vogtp/go-icinga/pkg/checks"
 	"github.com/vogtp/go-icinga/pkg/icinga"
-	"github.com/vogtp/go-system-check/pkg/unit"
+	"github.com/vogtp/go-icinga/pkg/unit"
 )
 
 // Command adds all memory commands

@@ -4,22 +4,26 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"os/signal"
 	"os/user"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/vogtp/go-icinga/pkg/director"
+	"github.com/vogtp/go-icinga/pkg/ssh"
 	cpucmd "github.com/vogtp/go-system-check/cmd/cpu"
 	"github.com/vogtp/go-system-check/cmd/disk"
 	"github.com/vogtp/go-system-check/cmd/hashcmd"
 	"github.com/vogtp/go-system-check/cmd/memory"
 	"github.com/vogtp/go-system-check/cmd/systemdcmd"
-	"github.com/vogtp/go-system-check/pkg/ssh"
 )
 
 // Command adds the root command
-func Command(ctx context.Context) {
+func Command() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer stop()
 	rootCtl.AddCommand(cpucmd.Command())
 	// rootCtl.AddCommand(testcmd.Command())
 	rootCtl.AddCommand(hashcmd.Command())

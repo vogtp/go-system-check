@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/vogtp/go-system-check/pkg/hash"
+	"github.com/vogtp/go-icinga/pkg/hash"
 )
 
 // Command adds all hash commands
@@ -33,7 +33,7 @@ var hashCheckCmd = &cobra.Command{
 		if len(args) < 1 {
 			return cmd.Help()
 		}
-		if err:= hash.Check(args[0]); err != nil {
+		if err := hash.Check(args[0]); err != nil {
 			slog.Info("Hash Check failed", "err", err)
 			os.Exit(1)
 		}
