@@ -89,28 +89,33 @@ func exclude(path string, excl ...string) bool {
 	return false
 }
 
-func diskTableFormater(counter map[string]any) string {
-	rowHeader := table.Row{ "Partiton", "Percent", "Used", "Free", "Total"}
+func diskTableFormater(counter map[string]check.Value) string {
+	rowHeader := table.Row{"", "Partiton", "Percent", "Used", "Free", "Total"}
 	disks := make(map[string]table.Row)
-	for n, v := range counter {
+	disksCodes := make(map[string]icinga.ResultCode)
+	for n, val := range counter {
+		v := val.Value
 		split := strings.Split(n, "-")
 		diskName := split[0]
 		d, ok := disks[diskName]
 		if !ok {
-			d = make([]any, 5)
-			d[0] = diskName
+			d = make([]any, len(rowHeader))
+			d[1] = diskName
 		}
+		rc := max(disksCodes[diskName], val.ResultCode)
 		switch split[1] {
 		case "percent":
-			d[1] = fmt.Sprintf("%.1f%%", v)
+			d[2] = fmt.Sprintf("%.1f%%", v)
 		case "usage":
-			d[2] = unit.FormatGB(v)
-		case "free":
 			d[3] = unit.FormatGB(v)
-		case "total":
+		case "free":
 			d[4] = unit.FormatGB(v)
+		case "total":
+			d[5] = unit.FormatGB(v)
 		}
+		d[0] = rc.IcingaString()
 		disks[diskName] = d
+		disksCodes[diskName] = rc
 	}
 	diskRows := make([]table.Row, 0, len(disks))
 	for _, d := range disks {
@@ -130,5 +135,5 @@ func tableSort(a, b table.Row) int {
 	if len(a) < 1 || len(b) < 1 {
 		return 0
 	}
-	return len(a[0].(string)) - len(b[0].(string))
+	return len(a[1].(string)) - len(b[1].(string))
 }

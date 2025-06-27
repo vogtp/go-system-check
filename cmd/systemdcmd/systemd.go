@@ -91,16 +91,17 @@ func activeStateFormater(name string, value any) string {
 	return fmt.Sprintf("%v", f.ActiveStateInt())
 }
 
-func systemdUnitTableFormater(counter map[string]any) string {
+func systemdUnitTableFormater(counter map[string]check.Value) string {
 	rowHeader := table.Row{"", "Unit", "State", "Preset"}
 	rows := make([]table.Row, 0, len(counter))
-	for n, v := range counter {
+	for n, val := range counter {
+		v := val.Value
 		u, ok := v.(*systemd.Service)
 		if !ok {
 			slog.Warn("Not a systemd.Service", "counter", v)
 			continue
 		}
-		rows = append(rows, table.Row{ getResultCode(u).IcingaString(), n, u.ActiveState(), u.Preset()})
+		rows = append(rows, table.Row{getResultCode(u).IcingaString(), n, u.ActiveState(), u.Preset()})
 	}
 
 	//slices.SortFunc(rows, tableSort)
