@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -125,7 +126,13 @@ func diskTableFormater(counter map[string]check.Data) string {
 	tw := table.NewWriter()
 	tw.AppendHeader(rowHeader)
 	tw.AppendRows(diskRows)
-	tw.SetIndexColumn(0)
+	tw.SetIndexColumn(1)
+	tw.SetColumnConfigs([]table.ColumnConfig{
+		{Number: 3, Align: text.AlignRight},
+		{Number: 4, Align: text.AlignRight},
+		{Number: 5, Align: text.AlignRight},
+		{Number: 6, Align: text.AlignRight},
+	})
 	style := table.StyleLight
 	style.HTML.EscapeText = true
 	tw.SetStyle(style)
