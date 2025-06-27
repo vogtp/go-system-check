@@ -1,14 +1,23 @@
 package cpu
 
 import (
+	"cmp"
+	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
-	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/process"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/vogtp/go-icinga/pkg/check"
 	"github.com/vogtp/go-icinga/pkg/icinga"
+)
+
+const (
+	proocListCnt = "process.list.count"
 )
 
 var cpuLoadCmd = &cobra.Command{
@@ -39,17 +48,48 @@ var cpuLoadCmd = &cobra.Command{
 		}
 		total := t / float64(len(cpuPercent))
 		result.SetHeader("Total load %v", total)
-		if total > 90 {
-			result.SetCode(icinga.WARNING)
-		}
-		if total > 98 {
-			result.SetCode(icinga.CRITICAL)
-		}
 		result.SetCounter("total", total)
 		// fmt.Printf("total %.3f%%\n", t/float64(len(cpuPercent)))
 
+		if err := listTopProcesses(ctx, result); err != nil {
+			return err
+		}
+
 		return nil
 	},
+}
+
+func listTopProcesses(ctx context.Context, result *check.Result) error {
+	procs, err := process.ProcessesWithContext(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot list processes: %w", err)
+	}
+	slices.SortFunc(procs, func(a, b *process.Process) int {
+		aP, err := a.CPUPercent()
+		if err != nil {
+			slog.Warn("Cannot get process CPU%", "err", err)
+		}
+		bP, err := b.CPUPercent()
+		if err != nil {
+			slog.Warn("Cannot get process CPU%", "err", err)
+		}
+		return cmp.Compare(bP, aP)
+	})
+	for i, p := range procs {
+		if i > viper.GetInt(proocListCnt) {
+			break
+		}
+		n, err := p.Name()
+		if err != nil {
+			slog.Warn("Cannot get process name", "err", err)
+		}
+		cpuPer, err := p.CPUPercent()
+		if err != nil {
+			slog.Warn("Cannot get process CPU%", "err", err)
+		}
+		result.SetStatus(n, fmt.Sprintf("%.1f%%", cpuPer))
+	}
+	return nil
 }
 
 var cpuLoadFollowCmd = &cobra.Command{
