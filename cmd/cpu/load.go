@@ -15,9 +15,13 @@ var cpuLoadCmd = &cobra.Command{
 	Use:   "load",
 	Short: "Show cpu load",
 	Long:  ``,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		check.SetCriticalThresholdDefault("99%")
+		check.SetWarningThresholdDefault("90%")
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-
 		result := check.NewResult(cmd.CommandPath(), check.PercentCounterFormater())
 
 		defer result.PrintExit()

@@ -37,6 +37,11 @@ var diskCmd = &cobra.Command{
 	Use:   "disk",
 	Short: "Show disk usage",
 	Long:  ``,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		check.SetWarningThresholdDefault("90%")
+		check.SetCriticalThresholdDefault("95%")
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
@@ -63,18 +68,8 @@ var diskCmd = &cobra.Command{
 			result.SetCounter(p.Mountpoint+"-percent", du.UsedPercent)
 			result.SetCounter(p.Mountpoint+"-usage", du.Used)
 			result.SetCounter(p.Mountpoint+"-free", du.Free)
-			code := ""
-			if du.UsedPercent > 90 {
-				result.SetCode(icinga.WARNING)
-				code = fmt.Sprintf("[%s]", icinga.WARNING.String())
-			} else {
-				code = fmt.Sprintf("[%s]", icinga.OK.String())
-			}
-			if du.UsedPercent > 95 {
-				result.SetCode(icinga.CRITICAL)
-				code = fmt.Sprintf("[%s]", icinga.CRITICAL.String())
-			}
-			h.WriteString(fmt.Sprintf("%s %s %.0f%% ", p.Mountpoint, code, du.UsedPercent))
+
+			h.WriteString(fmt.Sprintf("%s %s %.0f%% ", p.Mountpoint, result.GetCode().IcingaString(), du.UsedPercent))
 		}
 		result.SetHeader("%s", h.String())
 		return nil
@@ -95,7 +90,7 @@ func exclude(path string, excl ...string) bool {
 }
 
 func diskTableFormater(counter map[string]any) string {
-	rowHeader := table.Row{"Partiton", "Percent", "Used", "Free", "Total"}
+	rowHeader := table.Row{ "Partiton", "Percent", "Used", "Free", "Total"}
 	disks := make(map[string]table.Row)
 	for n, v := range counter {
 		split := strings.Split(n, "-")

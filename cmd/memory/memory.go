@@ -35,6 +35,11 @@ var memoryCmd = &cobra.Command{
 	Use:   "memory",
 	Short: "Show memory",
 	Long:  ``,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		check.SetWarningThresholdDefault("90%")
+		check.SetCriticalThresholdDefault("98%")
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
@@ -52,12 +57,6 @@ var memoryCmd = &cobra.Command{
 		result.SetCounter("used", v.Used)
 		result.SetCounter("free", v.Free)
 		result.SetCounter(usedPercent, v.UsedPercent)
-		if v.UsedPercent > 90 {
-			result.SetCode(icinga.WARNING)
-		}
-		if v.UsedPercent > 98 {
-			result.SetCode(icinga.CRITICAL)
-		}
 		result.SetHeader("Used %.0f%%", v.UsedPercent)
 		return nil
 	},

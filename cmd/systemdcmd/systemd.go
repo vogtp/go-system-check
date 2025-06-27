@@ -92,7 +92,7 @@ func activeStateFormater(name string, value any) string {
 }
 
 func systemdUnitTableFormater(counter map[string]any) string {
-	rowHeader := table.Row{"Unit", "State", "Preset"}
+	rowHeader := table.Row{"", "Unit", "State", "Preset"}
 	rows := make([]table.Row, 0, len(counter))
 	for n, v := range counter {
 		u, ok := v.(*systemd.Service)
@@ -100,7 +100,7 @@ func systemdUnitTableFormater(counter map[string]any) string {
 			slog.Warn("Not a systemd.Service", "counter", v)
 			continue
 		}
-		rows = append(rows, table.Row{n, u.ActiveState(), u.Preset()})
+		rows = append(rows, table.Row{ getResultCode(u).IcingaString(), n, u.ActiveState(), u.Preset()})
 	}
 
 	//slices.SortFunc(rows, tableSort)
