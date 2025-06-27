@@ -21,7 +21,7 @@ const (
 )
 
 func memoryFormater() check.CheckResultOption {
-	return check.CounterFormater(func(name string, value check.Value) string {
+	return check.CounterFormater(func(name string, value check.Data) string {
 		f, ok := value.Value.(float64)
 		if !ok {
 			return unit.FormatGB(value.Value)

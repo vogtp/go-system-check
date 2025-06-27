@@ -83,7 +83,7 @@ func getResultCode(service *systemd.Service) icinga.ResultCode {
 	return icinga.OK
 }
 
-func activeStateFormater(name string, value check.Value) string {
+func activeStateFormater(name string, value check.Data) string {
 	f, ok := value.Value.(*systemd.Service)
 	if !ok {
 		return fmt.Sprintf("%T", value)
@@ -91,7 +91,7 @@ func activeStateFormater(name string, value check.Value) string {
 	return fmt.Sprintf("%v", f.ActiveStateInt())
 }
 
-func systemdUnitTableFormater(counter map[string]check.Value) string {
+func systemdUnitTableFormater(counter map[string]check.Data) string {
 	rowHeader := table.Row{"", "Unit", "State", "Preset"}
 	rows := make([]table.Row, 0, len(counter))
 	for n, val := range counter {

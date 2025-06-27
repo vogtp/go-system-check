@@ -89,7 +89,7 @@ func exclude(path string, excl ...string) bool {
 	return false
 }
 
-func diskTableFormater(counter map[string]check.Value) string {
+func diskTableFormater(counter map[string]check.Data) string {
 	rowHeader := table.Row{"", "Partiton", "Percent", "Used", "Free", "Total"}
 	disks := make(map[string]table.Row)
 	disksCodes := make(map[string]icinga.ResultCode)
