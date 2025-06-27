@@ -102,7 +102,7 @@ var cpuLoadFollowCmd = &cobra.Command{
 
 		tick := time.NewTicker(1 * time.Second).C
 		for range 500 {
-			cpuPercent, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, true)
+			cpuPercent, _ := cpu.PercentWithContext(ctx, 200*time.Millisecond, true)
 			cpuPercentTot, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, false)
 			if err != nil {
 				slog.Warn("Cannot stat cpu percent", "err", err)
