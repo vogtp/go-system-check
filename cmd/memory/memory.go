@@ -43,7 +43,7 @@ var memoryCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		result := check.NewResult(cmd.CommandPath(), memoryFormater())
+		result := check.NewResult(cmd.CommandPath(), check.PercentOrBytesCounterFormater())
 
 		defer result.PrintExit()
 

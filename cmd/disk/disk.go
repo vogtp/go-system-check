@@ -46,7 +46,7 @@ var diskCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		result := check.NewResult(cmd.CommandPath(), check.PercentCounterFormater(), check.DisplayFormater(diskTableFormater))
+		result := check.NewResult(cmd.CommandPath(), check.PercentOrBytesCounterFormater(), check.DisplayFormater(diskTableFormater))
 		defer result.PrintExit()
 
 		parts, err := disk.PartitionsWithContext(ctx, true)
