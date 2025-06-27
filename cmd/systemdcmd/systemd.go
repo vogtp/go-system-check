@@ -83,8 +83,8 @@ func getResultCode(service *systemd.Service) icinga.ResultCode {
 	return icinga.OK
 }
 
-func activeStateFormater(name string, value any) string {
-	f, ok := value.(*systemd.Service)
+func activeStateFormater(name string, value check.Value) string {
+	f, ok := value.Value.(*systemd.Service)
 	if !ok {
 		return fmt.Sprintf("%T", value)
 	}

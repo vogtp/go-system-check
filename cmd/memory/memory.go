@@ -21,10 +21,10 @@ const (
 )
 
 func memoryFormater() check.CheckResultOption {
-	return check.CounterFormater(func(name string, value any) string {
-		f, ok := value.(float64)
+	return check.CounterFormater(func(name string, value check.Value) string {
+		f, ok := value.Value.(float64)
 		if !ok {
-			return unit.FormatGB(value)
+			return unit.FormatGB(value.Value)
 		}
 		return fmt.Sprintf("%.3f%%", f)
 	},
