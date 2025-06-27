@@ -4,14 +4,23 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 // Command adds all cpu commands
 func Command() *cobra.Command {
 	cpuCmd.AddCommand(cpuListCmd)
 	cpuCmd.AddCommand(cpuLoadCmd)
+	flags := cpuCmd.PersistentFlags()
+	flags.Int(proocListCnt, 5, "Number of top processes to be listed")
+	flags.VisitAll(func(f *pflag.Flag) {
+		if err := viper.BindPFlag(f.Name, f); err != nil {
+			panic(err)
+		}
+	})
 	cpuLoadCmd.AddCommand(cpuLoadFollowCmd)
 	return cpuCmd
 }
