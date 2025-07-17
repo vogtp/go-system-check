@@ -66,7 +66,7 @@ var systemdServiceCmd = &cobra.Command{
 			result.SetCounter(unit, service)
 			code := getResultCode(service)
 			result.SetCode(code)
-			h.WriteString(fmt.Sprintf("%s [%s] ", unit, code))
+			h.WriteString(fmt.Sprintf("%s %s %s ", unit, service.ActiveState(), code.IcingaString()))
 		}
 		result.SetHeader("%s", h.String())
 		return nil
