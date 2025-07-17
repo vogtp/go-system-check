@@ -10,6 +10,7 @@ import (
 	"github.com/vogtp/go-system-check/cmd/disk"
 	"github.com/vogtp/go-system-check/cmd/hashcmd"
 	"github.com/vogtp/go-system-check/cmd/memory"
+	"github.com/vogtp/go-system-check/cmd/net"
 	"github.com/vogtp/go-system-check/cmd/systemdcmd"
 )
 
@@ -34,6 +35,7 @@ func main() {
 	rootCtl.AddCommand(memory.Command())
 	rootCtl.AddCommand(disk.Command())
 	rootCtl.AddCommand(systemdcmd.Command())
+	rootCtl.AddCommand(net.Command())
 
 	if err := rootCtl.Execute(); err != nil {
 		fmt.Println(err)
