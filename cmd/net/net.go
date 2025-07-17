@@ -54,15 +54,16 @@ var netStatCmd = &cobra.Command{
 		stat, err := net.Stat(viper.GetStringSlice(ignoredProtos))
 		if err != nil {
 			result.SetCode(icinga.UNKNOWN)
-			slog.Warn("Cannot run netstat systemd",  "err", err)
+			slog.Warn("Cannot run netstat", "err", err)
 			return err
 		}
-		total:=0
-		for k,v:=range stat {
-			result.SetCounter(k,v)
+		total := 0
+		for k, v := range stat {
+			result.SetCounter(k, v)
 			total += v
 		}
-		result.SetCounter("total",total)
+		result.SetCounter("total", total)
+		result.SetHeader("%s %v", "total connections:", total)
 		return nil
 	},
 }

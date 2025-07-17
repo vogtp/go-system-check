@@ -70,7 +70,7 @@ var diskCmd = &cobra.Command{
 			result.SetCounter(p.Mountpoint+"-usage", du.Used)
 			result.SetCounter(p.Mountpoint+"-free", du.Free)
 
-			h.WriteString(fmt.Sprintf("%s %s %.0f%% ", p.Mountpoint, result.GetCode().IcingaString(), du.UsedPercent))
+			h.WriteString(fmt.Sprintf("%s %.0f%% ", p.Mountpoint,  du.UsedPercent))
 		}
 		result.SetHeader("%s", h.String())
 		return nil
