@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	goicinga "github.com/vogtp/go-icinga"
 	"github.com/vogtp/go-icinga/pkg/check"
 	"github.com/vogtp/go-icinga/pkg/icinga"
 	"github.com/vogtp/go-system-check/cmd/cpu"
@@ -11,6 +12,12 @@ import (
 	"github.com/vogtp/go-system-check/cmd/memory"
 	"github.com/vogtp/go-system-check/cmd/systemdcmd"
 )
+
+func init() {
+	goicinga.VersionMajor = 0
+	goicinga.VersionMinor = 4
+	goicinga.VersionPatch = 0
+}
 
 func main() {
 	rootCtl := &check.Command{
