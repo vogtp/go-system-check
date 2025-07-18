@@ -20,7 +20,7 @@ var hashCmd = &cobra.Command{
 	Short: "Show file hash",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		h, err := hash.Calc()
+		h, err := hash.Calc(os.Args[0])
 		fmt.Printf("%s\n", h)
 		return err
 	},
