@@ -76,7 +76,7 @@ func listTopProcesses(ctx context.Context, result *check.Result) error {
 		return cmp.Compare(bP, aP)
 	})
 	for i, p := range procs {
-		if i > viper.GetInt(proocListCnt) {
+		if i >= viper.GetInt(proocListCnt) {
 			break
 		}
 		n, err := p.Name()
