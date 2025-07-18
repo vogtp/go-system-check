@@ -26,8 +26,8 @@ func TestStat(t *testing.T) {
 				t.Errorf("parsing %s got error: %v", tt.name, err)
 			}
 			for k, v := range tt.res {
-				if np.stats[k] != v {
-					t.Errorf("%s: %s expected %v got %v", tt.name, k, v, np.stats[k])
+				if np.Summary[k] != v {
+					t.Errorf("%s: %s expected %v got %v", tt.name, k, v, np.Summary[k])
 				}
 			}
 		})

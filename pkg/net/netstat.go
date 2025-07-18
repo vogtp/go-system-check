@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func Stat(ignoredProtos []string) (map[string]int, error) {
+func Stat(ignoredProtos []string) (*NetStat, error) {
 	netstatCmd := exec.Command("netstat")
 	var stdo bytes.Buffer
 	var stde bytes.Buffer
@@ -22,18 +22,13 @@ func Stat(ignoredProtos []string) (map[string]int, error) {
 		return nil, err
 	}
 	np, err := parseNetStatOut(&stdo, ignoredProtos)
-	return np.stats, err
+	return np, err
 }
 
-const (
-	protoHeader = "proto"
-	stateHeader = "state"
-)
-
-func parseNetStatOut(r io.Reader, ignoredProtos []string) (*netstatParser, error) {
+func parseNetStatOut(r io.Reader, ignoredProtos []string) (*NetStat, error) {
 	// ignore line: Active UNIX domain sockets (w/o servers)
 	ignoredProtos = append(ignoredProtos, "Active")
-	np := netstatParser{ignoredProtos: ignoredProtos}
+	np := NetStat{ignoredProtos: ignoredProtos}
 	s := bufio.NewScanner(r)
 	started := false
 	for s.Scan() {
@@ -65,14 +60,23 @@ func parseNetStatOut(r io.Reader, ignoredProtos []string) (*netstatParser, error
 	return &np, nil
 }
 
-type netstatParser struct {
+type NetStat struct {
 	protoIdx      int
 	stateIdx      int
+	remoteIdx     int
 	ignoredProtos []string
-	stats         map[string]int
+	Summary       map[string]int
+	Deatils       map[string]map[string]int
 }
 
-func (np *netstatParser) header(hdrs string) error {
+const (
+	protoHeader  = "proto"
+	stateHeader  = "state"
+	remoteHeader = "foreign"
+	established  = "ESTABLISHED"
+)
+
+func (np *NetStat) header(hdrs string) error {
 	headers := strings.Fields(strings.ReplaceAll(hdrs, "Address", ""))
 	np.protoIdx = -1
 	np.stateIdx = -1
@@ -82,6 +86,10 @@ func (np *netstatParser) header(hdrs string) error {
 			np.protoIdx = i
 		case stateHeader:
 			np.stateIdx = i
+		case remoteHeader:
+			np.remoteIdx = i
+			// default:
+			// 	fmt.Printf("Unused header: %s\n", h)
 		}
 		if np.protoIdx > -1 && np.stateIdx > -1 {
 			headers[np.protoIdx] = fmt.Sprintf("*%s*", headers[np.protoIdx])
@@ -96,9 +104,10 @@ func (np *netstatParser) header(hdrs string) error {
 	return nil
 }
 
-func (np *netstatParser) parse(d []string) error {
-	if np.stats == nil {
-		np.stats = make(map[string]int)
+func (np *NetStat) parse(d []string) error {
+	if np.Summary == nil {
+		np.Summary = make(map[string]int)
+		np.Deatils = make(map[string]map[string]int)
 	}
 	l := len(d)
 	if l < np.protoIdx || l < np.stateIdx {
@@ -113,6 +122,16 @@ func (np *netstatParser) parse(d []string) error {
 		return nil
 	}
 	key := fmt.Sprintf("%s/%s", p, s)
-	np.stats[key] = np.stats[key] + 1
+	np.Summary[key] = np.Summary[key] + 1
+	// remote details
+	r := d[np.remoteIdx]
+	sm := np.Deatils[s]
+	if sm == nil {
+		sm = make(map[string]int)
+		np.Deatils[s] = sm
+	}
+	cnt := sm[r]
+	cnt++
+	np.Deatils[s][r] = cnt
 	return nil
 }
