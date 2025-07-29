@@ -47,7 +47,7 @@ var cpuLoadCmd = &cobra.Command{
 			t += f
 		}
 		total := t / float64(len(cpuPercent))
-		result.SetHeader("Total load %v", total)
+		result.SetHeader("Total load %.3f%%", total)
 		result.SetCounter("total", total)
 		// fmt.Printf("total %.3f%%\n", t/float64(len(cpuPercent)))
 
