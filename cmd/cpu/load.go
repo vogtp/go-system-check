@@ -34,7 +34,7 @@ var cpuLoadCmd = &cobra.Command{
 		result := check.NewResult(cmd.CommandPath(), check.PercentCounterFormater())
 
 		defer result.PrintExit()
-		cpuPercent, err := cpu.PercentWithContext(ctx, 200*time.Millisecond, true)
+		cpuPercent, err := cpu.PercentWithContext(ctx, 500*time.Millisecond, true)
 		if err != nil {
 			slog.Warn("Cannot stat cpu percent", "err", err)
 			result.SetCode(icinga.UNKNOWN)
@@ -67,11 +67,11 @@ func listTopProcesses(ctx context.Context, result *check.Result) error {
 	slices.SortFunc(procs, func(a, b *process.Process) int {
 		aP, err := a.CPUPercent()
 		if err != nil {
-			slog.Warn("Cannot get process CPU%", "err", err)
+			slog.Info("Cannot get process CPU%% to compare", "err", err, "percent", aP)
 		}
 		bP, err := b.CPUPercent()
 		if err != nil {
-			slog.Warn("Cannot get process CPU%", "err", err)
+			slog.Info("Cannot get process CPU%% to compare", "err", err, "percent", bP)
 		}
 		return cmp.Compare(bP, aP)
 	})
@@ -81,11 +81,11 @@ func listTopProcesses(ctx context.Context, result *check.Result) error {
 		}
 		n, err := p.Name()
 		if err != nil {
-			slog.Warn("Cannot get process name", "err", err)
+			slog.Info("Cannot get process name", "err", err)
 		}
 		cpuPer, err := p.CPUPercent()
 		if err != nil {
-			slog.Warn("Cannot get process CPU%", "err", err)
+			slog.Info("Cannot get process CPU%", "err", err)
 		}
 		result.SetStatus(n, fmt.Sprintf("%.1f%%", cpuPer))
 	}
