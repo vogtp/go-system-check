@@ -1,6 +1,6 @@
 module github.com/vogtp/go-system-check
 
-go 1.24.2
+go 1.24.5
 
 require (
 	github.com/jedib0t/go-pretty/v6 v6.6.7
